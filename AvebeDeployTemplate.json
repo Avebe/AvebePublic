@@ -1,0 +1,135 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "adminPassword": {
+      "type": "securestring"
+    },
+    "adminUserName": {
+      "type": "string"
+    },
+    "AvailabilitySetName": {
+      "type": "string"
+    },
+    "domainJoinOptions": {
+      "type": "int",
+      "defaultValue": 3,
+      "metadata": {
+        "description": "Set of bit flags that define the join options. Default value of 3 is a combination of NETSETUP_JOIN_DOMAIN (0x00000001) & NETSETUP_ACCT_CREATE (0x00000002) i.e. will join the domain and create the account on the domain. For more information see https://msdn.microsoft.com/en-us/library/aa392154(v=vs.85).aspx"
+      }
+    },
+    "domainPassword": {
+      "type": "string",
+      "metadata": {
+        "description": "Password of the account on the domain"
+      }
+    },
+    "domainToJoin": {
+      "type": "string",
+      "metadata": {
+        "description": "The FQDN of the AD domain"
+      }
+    },
+    "domainUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "Username of the account on the domain"
+      }
+    },
+    "ouPath": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Specifies an organizational unit (OU) for the domain account. Enter the full distinguished name of the OU in quotation marks. Example: 'OU=testOU; DC=domain; DC=Domain; DC=com'"
+      }
+    },
+    "StorageAccountName": {
+      "type": "string"
+    },
+    "vmName": {
+      "type": "string"
+    },
+    "vmSize": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    "apiVersion": "2015-06-15",
+    "OSDiskName": "osdiskforwindowssimple",
+    "nicName": "[concat(parameters('vmName'),'-nic01')]"
+  },
+  "resources": [
+    {
+      "apiVersion": "[variables('apiVersion')]",
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('vmSize')]"
+        },
+        "storageProfile": {
+          "osDisk": {
+            "osType": "Windows",
+            "name": "template-osDisk.21820e8b-6228-490a-bde4-a12f808439b0.vhd",
+            "createOption": "FromImage",
+            "image": {
+              "uri": "[concat('https://',parameters('StorageAccountName'),'.blob.core.windows.net/mytemplates/template-osDisk.21820e8b-6228-490a-bde4-a12f808439b0.vhd')]"
+            },
+            "vhd": {
+              "uri": "[concat('https://',parameters('StorageAccountName'),'.blob.core.windows.net/',parameters('vmName'),'/',variables('OSDiskName'),'.vhd')]"
+            },
+            "caching": "ReadWrite"
+          }
+        },
+        "osProfile": {
+          "computerName": "[parameters('vmName')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]"
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[concat('/subscriptions/705982b7-0ac8-468c-a655-21cea9b89730/resourceGroups/',resourceGroup().Name,'/providers/Microsoft.Network/networkInterfaces/',variables('nicName'))]"
+            }
+          ]
+        },
+        "diagnosticsProfile": {
+          "bootDiagnostics": {
+            "enabled": true,
+            "storageUri": "[concat('https://',parameters('StorageAccountName'),'.blob.core.windows.net/')]"
+          }
+        },
+        "availabilitySet": {
+          "id": "[resourceId('Microsoft.Compute/availabilitySets', parameters('AvailabilitySetName'))]"
+        },
+        "provisioningState": 0,
+      },
+      "name": "[parameters('vmName')]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "location": "[resourceGroup().location]"
+    },
+    { 
+      "apiVersion": "[variables('apiVersion')]", 
+      "type": "Microsoft.Compute/virtualMachines/extensions", 
+      "name": "[concat(parameters('vmName'),'/joindomain')]", 
+      "location": "[resourceGroup().location]", 
+      "dependsOn": [ 
+        "[concat('Microsoft.Compute/virtualMachines/', parameters('vmName'))]" 
+      ], 
+      "properties": { 
+        "publisher": "Microsoft.Compute", 
+        "type": "JsonADDomainExtension", 
+        "typeHandlerVersion": "1.0", 
+        "settings": { 
+          "Name": "[parameters('domainToJoin')]", 
+          "OUPath": "[parameters('ouPath')]", 
+          "User": "[concat(parameters('domainToJoin'), '\\', parameters('domainUsername'))]", 
+          "Restart": "true", 
+          "Options": "[parameters('domainJoinOptions')]" 
+        }, 
+        "protectedsettings": { 
+          "Password": "[parameters('domainPassword')]" 
+        } 
+      } 
+    }
+  ]
+}
+
