@@ -1,0 +1,33 @@
+<?xml version="1.0" standalone="no"?>
+<Commands>
+   <INFO Product="Intune PowerShell Commands" Version="1.2" />
+   <Application Name="My Application installation Script" />
+   <Command PSVersion="2">
+	   <WorkingDir></WorkingDir>
+	   <File FilePath="" args="" />
+	   <executionpolicy policy="bypass" />
+	   <Scriptblock>Get-ChildItem $env:windir\system32\drivers\etc</Scriptblock>
+  </Command>
+  <Command PSVersion="2">
+	   <WorkingDir></WorkingDir>
+	   <File FilePath="" args="" />
+	   <executionpolicy policy="bypass" />
+	   <Scriptblock>Get-ChildItem $env:windir\system32\drivers\etc | ForEach {Get-Content $_.fullname}
+	     Write-EventLog -LogName Application -Source "Application Management" -EventId 1000 -EntryType Information -Message "Intune Powershell Commands Eventlog Test"
+	   </Scriptblock>
+  </Command>
+  <!-- <Command PSVersion="2">
+	   <WorkingDir></WorkingDir>
+	   <File FilePath="test.ps1" args="Install" />
+	   <executionpolicy policy="bypass" />
+	   <Scriptblock>Get-ChildItem $env:windir\system32\drivers\etc | ForEach {Get-Content $_.fullname}
+	     Write-EventLog -LogName Application -Source "Application Management" -EventId 1000 -EntryType Information -Message "Intune Powershell Commands Eventlog Test2"
+	   </Scriptblock>
+  </Command>
+  <Command PSVersion="2">
+	   <WorkingDir></WorkingDir>
+	   <File FilePath="test.ps1" args="Install" />
+	   <executionpolicy policy="bypass" />
+	   <Scriptblock></Scriptblock>
+  </Command> -->
+</Commands>
